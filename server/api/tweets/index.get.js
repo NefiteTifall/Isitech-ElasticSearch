@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
 
     let esQuery;
 
+    // If no candidates are provided, return an empty result
     if (candidates.length === 0) {
         return {
             tweets: [],
@@ -19,7 +20,9 @@ export default defineEventHandler(async (event) => {
         };
     }
 
+    // If a search query is provided, use a boolean query
     if (searchQuery) {
+        // Search for tweets that contain the search query and are from the specified candidates
         esQuery = {
             bool: {
                 must: [
@@ -33,12 +36,14 @@ export default defineEventHandler(async (event) => {
             }
         };
     } else {
+        // Search for tweets that are from the specified candidates
         esQuery = {
             terms: { 'label': candidates }
         };
     }
 
     try {
+        // Search for tweets with the specified query and pagination, sorted by created_at
         const result = await ElasticClient.search({
             index: 'tweets',
             body: {
