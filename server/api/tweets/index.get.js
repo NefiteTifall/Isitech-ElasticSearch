@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
         });
 
         return {
-            tweets: result.hits.hits.map(hit => hit._source),
+            tweets: result.hits.hits,
             total: result.hits.total.value,
             page,
             pageSize
