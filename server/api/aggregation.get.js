@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
         const result = await ElasticClient.search({
             index: 'tweets',
             body: {
-                track_total_hits: true,
+                size: 0,
                 aggs: {
                     tweets_per_candidate: {
                         terms: {
@@ -13,8 +13,7 @@ export default defineEventHandler(async (event) => {
                             size: 100
                         }
                     }
-                },
-                size: 0
+                }
             }
         });
         return result.aggregations.tweets_per_candidate.buckets;
