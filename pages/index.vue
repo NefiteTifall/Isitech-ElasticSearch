@@ -103,6 +103,7 @@ export default {
 				console.log(data);
 				this.tweets = data.tweets.map(t => {
 					// Last word of text is source
+					t = t._source;
 					const text = t.text;
 					const urlRegex = /(https?:\/\/[^\s]+)/;
 					const match = text.match(urlRegex);
