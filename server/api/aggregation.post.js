@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
                 size: 0
             }
         });
-        return result;
+        return result.aggregations.tweets_per_candidate.buckets;
     } catch (error) {
         return { error: error.message };
     }
