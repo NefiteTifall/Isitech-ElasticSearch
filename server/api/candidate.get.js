@@ -9,7 +9,13 @@ export default defineEventHandler(async (event) => {
         const result = await response.json();
         const page = Object.values(result.query.pages)[0];
 
-        return page.thumbnail.source;
+        const url = page.thumbnail ? page.thumbnail.source : null;
+        // Get image
+        console.log(url)
+        const image = url ? await fetch(url) : null;
+
+        return sendStream(event, image.body, { type: 'image/jpeg' });
+
     } catch (error) {
         return { error: error.message };
     }
