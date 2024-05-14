@@ -126,13 +126,11 @@ export default {
 			});
 		},
 		loadCandidates() {
-			fetch("/api/candidates").then((res) => res.json()).then((data) => {
-				// If any key is "Jean Luc Melenchon", replace it with "Jean-Luc Mélenchon"
+			fetch(`/api/candidates?query=${ this.queryCandidates }`).then((res) => res.json()).then((data) => {
+				console.log(data);
 				data.forEach((candidate) => {
 					if (this.newName[candidate.key]) candidate.key = this.newName[candidate.key];
 				});
-
-				// Short key
 				data.sort((a, b) => a.key.localeCompare(b.key));
 				this.candidates = data;
 			});
@@ -161,10 +159,7 @@ export default {
 		"queryCandidates"() {
 			clearTimeout(this.timeouts.queryCandidates);
 			this.timeouts.queryCandidates = setTimeout(() => {
-				this.candidates = this.candidates.map((c) => {
-					c.selected = c.key.toLowerCase().includes(this.queryCandidates.toLowerCase());
-					return c;
-				});
+				this.loadCandidates();
 			}, 500);
 		}
 	}
