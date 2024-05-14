@@ -1,4 +1,4 @@
-import { ElasticClient } from '../utils/elasticsearch';
+import { ElasticClient } from '../../utils/elasticsearch';
 
 export default defineEventHandler(async (event) => {
     try {
