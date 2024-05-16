@@ -2,11 +2,10 @@ import { ElasticClient } from '../../utils/elasticsearch';
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event);
-    const page = parseInt(query.page || '1', 10);
     const pageSize = parseInt(query.pageSize || '10', 10);
-    const from = (page - 1) * pageSize;
     const candidates = query.candidates ? query.candidates.split(',') : [];
     const searchQuery = query.query || '';
+    const scrollId = query.scrollId;
 
     let esQuery;
 
@@ -15,52 +14,53 @@ export default defineEventHandler(async (event) => {
         return {
             tweets: [],
             total: 0,
-            page,
-            pageSize
+            scrollId: null
         };
     }
 
     // If a search query is provided, use a boolean query
     if (searchQuery) {
-        // Search for tweets that contain the search query and are from the specified candidates
         esQuery = {
             bool: {
                 must: [
-                    {
-                        terms: { 'label': candidates }
-                    },
-                    {
-                        match: { 'text': searchQuery }
-                    }
+                    { terms: { 'label.keyword': candidates } },
+                    { match: { 'text': searchQuery } }
                 ]
             }
         };
     } else {
-        // Search for tweets that are from the specified candidates
         esQuery = {
-            terms: { 'label': candidates }
+            terms: { 'label.keyword': candidates }
         };
     }
 
     try {
-        // Search for tweets with the specified query and pagination, sorted by created_at
-        const result = await ElasticClient.search({
-            index: 'tweets',
-            body: {
-                size: pageSize,
-                from: from,
-                query: esQuery,
-                sort: [
-                    { created_at: { order: 'desc' } }
-                ]
-            }
-        });
+        let result;
+
+        // Continue scrolling if the scrollId is provided
+        if (scrollId) {
+            result = await ElasticClient.scroll({
+                scroll_id: scrollId,
+                scroll: '1m'
+            });
+        } else {
+            // Initial scroll search request
+            result = await ElasticClient.search({
+                index: 'tweets',
+                body: {
+                    size: pageSize,
+                    query: esQuery,
+                    sort: [{ created_at: { order: 'desc' } }]
+                },
+                scroll: '30m' // Keep the search context alive for 30 minutes
+            });
+        }
 
         return {
+            scrollId: result._scroll_id,
             tweets: result.hits.hits,
             total: result.hits.total.value,
-            page,
-            pageSize
+            took: result.took
         };
     } catch (error) {
         return { error: error.message };
