@@ -1,75 +1,147 @@
-# Nuxt 3 Minimal Starter
+# TweetoPolitico
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+## Description
 
-## Setup
+TweetoPilico est une application se basant sur un jeu de donnée regroupant des tweets ou des articles de presse relatif
+aux présidentielles de 2022.
+L'objectif est simplement l'utilisation d'Elasticsearch pour indexer et rechercher des données.
 
-Make sure to install the dependencies:
+## 📍 Description
 
-```bash
-# npm
-npm install
+TweetoPilico est une application se basant sur un jeu de donnée regroupant des tweets ou des articles de presse relatif
+aux présidentielles de 2022.
+L'objectif est simplement l'utilisation d'Elasticsearch pour indexer et rechercher des données.
 
-# pnpm
+---
+
+## 📂 Repository Structure
+
+```sh
+└── Isitech-ElasticSearch/
+    ├── README.md
+    ├── app.vue
+    ├── layouts
+    │   └── default.vue
+    ├── nuxt.config.ts
+    ├── package.json
+    ├── pages
+    │   └── index.vue
+    ├── pnpm-lock.yaml
+    ├── public
+    │   └── favicon.ico
+    ├── server
+    │   ├── api
+    │   │   ├── candidates
+    │   │   │   ├── image.get.js
+    │   │   │   └── index.get.js
+    │   │   └── tweets
+    │   │       ├── [id].delete.js
+    │   │       └── index.get.js
+    │   ├── tsconfig.json
+    │   └── utils
+    │       └── elasticsearch.js
+    └── tsconfig.json
+```
+
+---
+
+## 🚀 Débuter avec Isitech-ElasticSearch
+
+### ⚙️ Installation
+
+1. Cloner le projet:
+
+```sh
+git clone https://github.com/NefiteTifall/Isitech-ElasticSearch && cd Isitech-ElasticSearch
+```
+
+2. Installer les dépendances:
+
+```sh
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+### 🤖 Exécution
 
-Start the development server on `http://localhost:3000`:
+Pour lancer le serveur, exécutez:
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+pnpm dev
 ```
 
-## Production
+---
 
-Build the application for production:
+## 📚 Utilisations d'Elasticsearch
 
-```bash
-# npm
-npm run build
+### Indexation
 
-# pnpm
-pnpm run build
+Nous avons créé un index `tweets` pour indexer les tweets importés via Kibana dans Elasticsearch. Cet index est utilisé pour stocker et récupérer les tweets en fonction des critères de recherche spécifiés par l'utilisateur.
 
-# yarn
-yarn build
+### Search API & Keyword Search
 
-# bun
-bun run build
+Dans ce projet, nous utilisons l'API de recherche d'Elasticsearch pour effectuer des recherches par mot-clé sur les tweets. La recherche par mot-clé est réalisée en utilisant une requête booléenne, qui est construite en fonction des paramètres fournis dans la requête HTTP, tels que la page, la taille de la page, les candidats et la requête de recherche.
+
+Voici un extrait de code du fichier `server/api/tweets/index.get.js` qui montre comment cela est fait :
+
+```javascript
+// If a search query is provided, use a boolean query
+if (searchQuery) {
+    esQuery = {
+        bool: {
+            must: [
+                { terms: { 'label.keyword': candidates } },
+                { match: { 'text': searchQuery } }
+            ]
+        }
+    };
+} else {
+    esQuery = {
+        terms: { 'label.keyword': candidates }
+    };
+}
 ```
 
-Locally preview production build:
+### 🚀 Fuzzy Matching
 
-```bash
-# npm
-npm run preview
+Elasticsearch offre une fonctionnalité appelée "Fuzzy Matching" qui permet de rechercher des termes qui sont similaires à un terme donné, mais pas exactement identiques. Cela peut être utile pour gérer les erreurs de frappe ou les variations orthographiques.
 
-# pnpm
-pnpm run preview
+Dans ce projet, nous utilisons le fuzzy matching pour améliorer la recherche de candidats. Lorsqu'un utilisateur saisit un terme de recherche, nous utilisons une requête fuzzy pour rechercher des candidats qui correspondent à ce terme.
 
-# yarn
-yarn preview
+Voici un exemple de la façon dont cela est mis en œuvre dans le fichier `server/api/candidates/index.get.js` :
 
-# bun
-bun run preview
+```javascript
+query: {
+     bool: {
+         should: [
+             {
+                 wildcard: {
+                     label: {
+                         value: `*${searchQuery}*`,
+                         boost: 1.0
+                     }
+                 },
+             },
+             {
+                 match: {
+                     label: {
+                         query: searchQuery,
+                         fuzziness: 'AUTO'
+                     }
+                 }
+             }
+         ],
+         minimum_should_match: 1
+     }
+ }
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Cette exemple montre également comment nous avons utilisé l'aggretation pour regrouper les tweets par candidat.
+
+### 📄 Scroll API 
+
+Nous utilisons l'API de défilement d'Elasticsearch pour récupérer les résultats de recherche paginés. Lorsqu'un utilisateur effectue une recherche, nous utilisons l'API de défilement pour récupérer les résultats de recherche par lots de 20 tweets à la fois.
+
+### ❌ Delete API 
+> Non disponible en front-end
+
+Nous avons également implémenté une API de suppression pour supprimer un tweet spécifique de l'index.
