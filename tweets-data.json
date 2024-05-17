@@ -1,0 +1,22 @@
+[
+    {
+        "candidat": "Michel A",
+        "message": "Message 1",
+        "createdAt": "2023-05-16T00:00:00.000Z"
+    },
+    {
+        "candidat": "Michel A",
+        "message": "Message 2",
+        "createdAt": "2023-05-16T00:00:00.000Z"
+    },
+    {
+        "candidat": "Michel A",
+        "message": "Message 3",
+        "createdAt": "2023-05-16T00:00:00.000Z"
+    },
+    {
+        "candidat": "Michel A",
+        "message": "Message 4",
+        "createdAt": "2023-05-16T00:00:00.000Z"
+    }
+]
