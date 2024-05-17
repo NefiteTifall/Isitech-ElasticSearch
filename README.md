@@ -145,3 +145,69 @@ Nous utilisons l'API de défilement d'Elasticsearch pour récupérer les résult
 > Non disponible en front-end
 
 Nous avons également implémenté une API de suppression pour supprimer un tweet spécifique de l'index.
+
+---
+
+## Dashboard Kibana X Logstash
+Voici des exemple de dashboard que nous avons créé sur Kibana pour visualiser les données importées via Logstash.
+![Dashboard](https://i.imgur.com/2VEkxTA.png)
+
+---
+
+## ➕ Ajout de jeux de données
+
+Pour ajouter des jeux de données supplémentaires, il est possible d'utiliser l'API :  
+* `/api/tweets` pour crer un tweet
+* `/api/tweets/import` pour importer un fichier json de tweets (voir `tweets-data.json` pour un exemple de structure de données)
+
+Pipleline Logstash pour importer les tweets :
+```sh
+PUT /_ingest/pipeline/tweet_data_pipeline
+{
+  "description": "Pipeline pour renommer des champs et formater la date",
+  "processors": [
+    {
+      "rename": {
+        "field": "message",
+        "target_field": "text"
+      }
+    },
+    {
+      "rename": {
+        "field": "candidat",
+        "target_field": "label"
+      }
+    },
+    {
+      "rename": {
+        "field": "createdAt",
+        "target_field": "created_at"
+      }
+    },
+    {
+      "date": {
+        "field": "created_at",
+        "formats": ["yyyy-MM-dd'T'HH:mm:ss.SSSX"],
+        "target_field": "created_at",
+        "timezone": "UTC"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": """
+          SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+          inputFormat.setTimeZone(TimeZone.getTimeZone('UTC'));
+          Date parsedDate = inputFormat.parse(ctx.created_at);
+          
+          SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssXXX");
+          outputFormat.setTimeZone(TimeZone.getTimeZone('UTC'));
+          ctx.created_at = outputFormat.format(parsedDate);
+          
+          long epochSeconds = parsedDate.getTime() / 1000;
+          ctx.id = epochSeconds
+        """
+      }
+    }
+  ]
+}
